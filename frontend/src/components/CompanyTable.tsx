@@ -9,6 +9,7 @@ import { Button, CircularProgress } from "@mui/material";
 import {
   getCollectionsById,
   ICompany,
+  updateAllCompaniesInCollection,
   updateCompaniesInCollection,
 } from "../utils/jam-api";
 import useApi from "../utils/useApi";
@@ -67,7 +68,21 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   };
 
   const handleUpdateAll = () => {
-    handleUpdateCompanies(collectionData?.companies || []);
+    handleUpdateAllCompanies();
+  };
+
+  const handleUpdateAllCompanies = async () => {
+    setIsUpdating(true);
+    try {
+      await updateAllCompaniesInCollection(selectedCollectionId, !isLikedCollection);
+      console.log("All companies updated successfully");
+      refresh();
+      onCompaniesUpdated();
+    } catch (error) {
+      console.error("Error updating all companies:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handlePaginationModelChange = (newModel: GridPaginationModel) => {
@@ -105,9 +120,9 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
         <Button
           variant="contained"
           onClick={handleUpdateAll}
-          disabled={!collectionData?.companies.length || loading || isUpdating}
+          disabled={loading || isUpdating}
         >
-          {buttonText} All {isLikedCollection ? "from Liked Companies" : ""}
+          {buttonText} All Companies {isLikedCollection ? "from Liked Companies" : ""}
         </Button>
         {(loading || isUpdating) && <CircularProgress size={24} />}
       </div>
