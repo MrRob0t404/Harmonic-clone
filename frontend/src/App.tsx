@@ -1,8 +1,8 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useEffect, useState } from "react";
 import CompanyTable from "./components/CompanyTable";
 import { getCollectionsMetadata } from "./utils/jam-api";
 import useApi from "./utils/useApi";
