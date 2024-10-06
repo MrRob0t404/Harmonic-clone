@@ -56,7 +56,6 @@ def fetch_companies_with_liked(
         for company, liked in results
     ]
 
-
 @router.get("", response_model=CompanyBatchOutput)
 def get_companies(
     offset: int = Query(
