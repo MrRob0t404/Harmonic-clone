@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 import uuid
 
@@ -127,7 +128,6 @@ def update_companies_in_collection(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
-
 @router.post("/{collection_id}/update-all-companies")
 def update_all_companies_in_collection(
     collection_id: uuid.UUID,
@@ -149,19 +149,20 @@ def update_all_companies_in_collection(
         # Add all companies to Liked Companies or remove all from Liked Companies
         if request.update_all:
             # Add all companies not already in Liked Companies
-            db.execute(
-                f"""
+            insert_query = text("""
                 INSERT INTO company_collection_associations (collection_id, company_id)
-                SELECT '{liked_collection.id}', c.id
+                SELECT :liked_collection_id, c.id
                 FROM companies c
                 WHERE NOT EXISTS (
                     SELECT 1
                     FROM company_collection_associations cca
-                    WHERE cca.collection_id = '{liked_collection.id}'
+                    WHERE cca.collection_id = :liked_collection_id
                     AND cca.company_id = c.id
                 )
-                """
-            )
+            """)
+            db.execute(insert_query, {
+                "liked_collection_id": str(liked_collection.id)
+            })
         else:
             # Remove all companies from Liked Companies
             db.query(database.CompanyCollectionAssociation).filter(
