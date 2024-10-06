@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import List
+import uuid
 
 from backend.db import database
 
@@ -15,11 +17,9 @@ class CompanyOutput(BaseModel):
     company_name: str
     liked: bool
 
-
 class CompanyBatchOutput(BaseModel):
     companies: list[CompanyOutput]
     total: int
-
 
 def fetch_companies_with_liked(
     db: Session, company_ids: list[int]
@@ -55,6 +55,7 @@ def fetch_companies_with_liked(
         )
         for company, liked in results
     ]
+
 
 @router.get("", response_model=CompanyBatchOutput)
 def get_companies(
