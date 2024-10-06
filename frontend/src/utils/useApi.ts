@@ -1,24 +1,41 @@
-import { useEffect, useState } from 'react';
-
-
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const useApi = <T>(apiFunction: () => Promise<T>) => {
-    const [data, setData] = useState<T>();
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<T>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const cacheRef = useRef<T | null>(null);
 
-    useEffect(() => {
-        setLoading(true);
-        apiFunction().then((response) => {
-            setData(response);
-        }).catch((error) => {
-            setError(error.message);
-        }).finally(() => {
-            setLoading(false);
-        });
-    }, []);
+  const fetchData = useCallback(() => {
+    if (cacheRef.current) {
+      setData(cacheRef.current);
+      return;
+    }
 
-    return { data, loading, error };
+    setLoading(true);
+    apiFunction()
+      .then((response) => {
+        setData(response);
+        cacheRef.current = response;
+      })
+      .catch((error) => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [apiFunction]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const refresh = useCallback(() => {
+    cacheRef.current = null;
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refresh };
 };
 
 export default useApi;
