@@ -1,5 +1,10 @@
-import React, { useState } from "react";
-import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  DataGrid,
+  GridColDef,
+  GridPaginationModel,
+  GridRowSelectionModel,
+} from "@mui/x-data-grid";
 import { Button, CircularProgress } from "@mui/material";
 import {
   getCollectionsById,
@@ -18,16 +23,26 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
   selectedCollectionId,
   onCompaniesUpdated,
 }) => {
-  const [offset, setOffset] = useState<number>(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: 25,
+  });
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const {
-    data: collectionData,
-    loading,
-    refresh,
-  } = useApi(() => getCollectionsById(selectedCollectionId, offset, pageSize));
+  const fetchData = useCallback(() => {
+    return getCollectionsById(
+      selectedCollectionId,
+      paginationModel.page * paginationModel.pageSize,
+      paginationModel.pageSize
+    );
+  }, [selectedCollectionId, paginationModel]);
+
+  const { data: collectionData, loading, refresh } = useApi(fetchData);
+
+  useEffect(() => {
+    refresh();
+  }, [selectedCollectionId, paginationModel, refresh]);
 
   const handleUpdateCompanies = async (companies: ICompany[]) => {
     setIsUpdating(true);
@@ -53,6 +68,10 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
 
   const handleUpdateAll = () => {
     handleUpdateCompanies(collectionData?.companies || []);
+  };
+
+  const handlePaginationModelChange = (newModel: GridPaginationModel) => {
+    setPaginationModel(newModel);
   };
 
   const columns: GridColDef[] = [
@@ -96,19 +115,12 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
         rows={collectionData?.companies || []}
         rowHeight={30}
         columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: { page: 0, pageSize: 25 },
-          },
-        }}
+        paginationModel={paginationModel}
+        onPaginationModelChange={handlePaginationModelChange}
         rowCount={collectionData?.total || 0}
+        paginationMode="server"
         pagination
         checkboxSelection
-        paginationMode="server"
-        onPaginationModelChange={(newMeta) => {
-          setPageSize(newMeta.pageSize);
-          setOffset(newMeta.page * newMeta.pageSize);
-        }}
         loading={loading}
         onRowSelectionModelChange={(newSelectionModel) => {
           setSelectedRows(newSelectionModel);
@@ -119,9 +131,3 @@ const CompanyTable: React.FC<CompanyTableProps> = ({
 };
 
 export default CompanyTable;
-
-/**
- * Users can add individual items from one list to another using the "Add Selected to Other List" button.
- * Users can add the entire set of companies from one list to another using the "Add All to Other List" button.
- * The UI reflects the in-progress state when a lengthy action is being performed by disabling the buttons and showing a loading indicator.
- */
