@@ -1,26 +1,33 @@
-import { DataGrid } from "@mui/x-data-grid";
-import { useEffect, useState } from "react";
-import { getCollectionsById, ICompany } from "../utils/jam-api";
+import React, { useState } from "react";
+import { DataGrid, GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Button, CircularProgress } from "@mui/material";
+import {
+  getCollectionsById,
+  ICompany,
+  updateCompaniesInCollection,
+} from "../utils/jam-api";
+import useApi from "../utils/useApi";
 
-const CompanyTable = (props: { selectedCollectionId: string }) => {
-  const [response, setResponse] = useState<ICompany[]>([]);
-  const [total, setTotal] = useState<number>();
+// Move interface to top for better readability / maintainability
+interface CompanyTableProps {
+  selectedCollectionId: string;
+  onCompaniesUpdated: () => void;
+}
+
+const CompanyTable: React.FC<CompanyTableProps> = ({
+  selectedCollectionId,
+  onCompaniesUpdated,
+}) => {
   const [offset, setOffset] = useState<number>(0);
   const [pageSize, setPageSize] = useState(25);
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
-    getCollectionsById(props.selectedCollectionId, offset, pageSize).then(
-      (newResponse) => {
-        setResponse(newResponse.companies);
-        setTotal(newResponse.total);
-      }
-    );
-  }, [props.selectedCollectionId, offset, pageSize]);
-
-  useEffect(() => {
-    setOffset(0);
-  }, [props.selectedCollectionId]);
+  const {
+    data: collectionData,
+    loading,
+    refresh,
+  } = useApi(() => getCollectionsById(selectedCollectionId, offset, pageSize));
 
   const handleUpdateCompanies = async (companies: ICompany[]) => {
     setIsUpdating(true);
@@ -43,6 +50,20 @@ const CompanyTable = (props: { selectedCollectionId: string }) => {
       ) || [];
     handleUpdateCompanies(selectedCompanies);
   };
+
+  const handleUpdateAll = () => {
+    handleUpdateCompanies(collectionData?.companies || []);
+  };
+
+  const columns: GridColDef[] = [
+    { field: "liked", headerName: "Liked", width: 90, type: "boolean" },
+    { field: "id", headerName: "ID", width: 90 },
+    { field: "company_name", headerName: "Company Name", width: 200 },
+  ];
+
+  const isLikedCollection =
+    collectionData?.collection_name === "Liked Companies";
+  const buttonText = isLikedCollection ? "Remove" : "Toggle Like";
 
   return (
     <div style={{ height: 800, width: "100%" }}>
@@ -72,19 +93,15 @@ const CompanyTable = (props: { selectedCollectionId: string }) => {
         {(loading || isUpdating) && <CircularProgress size={24} />}
       </div>
       <DataGrid
-        rows={response}
+        rows={collectionData?.companies || []}
         rowHeight={30}
-        columns={[
-          { field: "liked", headerName: "Liked", width: 90 },
-          { field: "id", headerName: "ID", width: 90 },
-          { field: "company_name", headerName: "Company Name", width: 200 },
-        ]}
+        columns={columns}
         initialState={{
           pagination: {
             paginationModel: { page: 0, pageSize: 25 },
           },
         }}
-        rowCount={total}
+        rowCount={collectionData?.total || 0}
         pagination
         checkboxSelection
         paginationMode="server"
@@ -92,9 +109,19 @@ const CompanyTable = (props: { selectedCollectionId: string }) => {
           setPageSize(newMeta.pageSize);
           setOffset(newMeta.page * newMeta.pageSize);
         }}
+        loading={loading}
+        onRowSelectionModelChange={(newSelectionModel) => {
+          setSelectedRows(newSelectionModel);
+        }}
       />
     </div>
   );
 };
 
 export default CompanyTable;
+
+/**
+ * Users can add individual items from one list to another using the "Add Selected to Other List" button.
+ * Users can add the entire set of companies from one list to another using the "Add All to Other List" button.
+ * The UI reflects the in-progress state when a lengthy action is being performed by disabling the buttons and showing a loading indicator.
+ */
