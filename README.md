@@ -1,6 +1,6 @@
 # Notes:
 
-A brief, written reflection describing your approach, any assumptions or tradeoffs you made, and any next steps you would take if you were to continue building + maintaining this feature
+These notes will layout the assumptions I've made before the project and future features
 
 ## Assumptions:
 
@@ -14,8 +14,8 @@ A brief, written reflection describing your approach, any assumptions or tradeof
 
 - UI/UX Considerations:
   Users should be able to view their selection before confirming the addition to minimize mistakes.
-- Performance Management
 
+- Performance Management:
   Given the potential for large-scale actions (like adding many companies), the application should implement pagination or lazy loading for the lists to improve load time and user experience.
   A loading indicator or progress bar should be shown when processing large actions to keep the user informed.
 
@@ -39,8 +39,12 @@ A brief, written reflection describing your approach, any assumptions or tradeof
 
 ## The Future:
 
+- Add unit tests / intergration tests to verify functionality and performance.
+- Optimize query to add all companies to Liked Companies list (it takes too long)
+- Provide a more robust way to notify the user of the current action they're doing
 
-## Demo: 
+## Demo:
+
 [High level overview of my changes](https://www.loom.com/share/16d4a2681d37442cad7a9b285fb33217?sid=dc626156-b38b-4703-a0c2-5bc48a44a564)
 
 [Demo!](https://www.loom.com/share/80d7c4d59dcf4030a6c15ab6e385d12e?sid=44e4da78-4069-468c-bb24-0ffe7e07aa9e)
