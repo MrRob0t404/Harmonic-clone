@@ -40,7 +40,6 @@ def get_all_collection_metadata(
         for collection in collections
     ]
 
-
 @router.get("/{collection_id}", response_model=CompanyCollectionOutput)
 def get_company_collection_by_id(
     collection_id: uuid.UUID,
